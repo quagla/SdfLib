@@ -32,12 +32,6 @@ file(GLOB SOURCE_FILES src/*.cpp)
 file(GLOB HEADER_FILES src/*.h)
 file(GLOB PUBLIC_HEADER_FILES include/SdfLib/*.h)
 
-file(GLOB RENDER_ENGINE_SOURCE_FILES src/render_engine/*.cpp)
-file(GLOB RENDER_ENGINE_HEADER_FILES src/render_engine/*.h)
-
-file(GLOB RENDER_ENGINE_SHADERS_SOURCE_FILES src/render_engine/shaders/*.cpp)
-file(GLOB RENDER_ENGINE_SHADERS_HEADER_FILES src/render_engine/shaders/*.h)
-
 file(GLOB SDF_SOURCE_FILES src/sdf/*.cpp)
 file(GLOB SDF_HEADER_FILES src/sdf/*.h)
 
@@ -51,21 +45,6 @@ add_library(${PROJECT_NAME} STATIC  ${SOURCE_FILES} ${HEADER_FILES} ${PUBLIC_HEA
 
 target_include_directories(${PROJECT_NAME} PUBLIC include/)
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
-
-# Add shaders
-file(GLOB SHADER_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/render_engine/shaders 
-                       src/render_engine/shaders/*.frag 
-                       src/render_engine/shaders/*.vert
-                       src/render_engine/shaders/*.comp)
-
-foreach(SHADER IN LISTS SHADER_FILES)
-    add_custom_command(OUTPUT ${SHADER}
-            COMMAND cmake -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/src/render_engine/shaders/${SHADER} $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders/${SHADER}
-            DEPENDS src/render_engine/shaders/${SHADER}
-        )
-endforeach()
-
-add_custom_target(copyShaders ALL SOURCES ${SHADER_FILES})
 
 # Add openmp
 set(ASSIMP_WARNINGS_AS_ERRORS OFF)
@@ -117,27 +96,6 @@ if (NOT UNIX)
 endif()
 
 if(SDFLIB_BUILD_APPS)
-    add_executable(SdfViewer src/tools/SdfViewer/main.cpp src/tools/SdfViewer/InfluenceRegionCreator.h
-                    ${RENDER_ENGINE_SOURCE_FILES} ${RENDER_ENGINE_HEADER_FILES}
-                    ${RENDER_ENGINE_SHADERS_SOURCE_FILES} ${RENDER_ENGINE_SHADERS_HEADER_FILES})
-    target_link_libraries(SdfViewer PUBLIC ${PROJECT_NAME} glfw imgui imguizmo glad)
-    target_include_directories(SdfViewer PRIVATE src/)
-    add_dependencies(SdfViewer copyShaders)
-
-    add_executable(SdfRender src/tools/SdfRender/main.cpp
-                    ${RENDER_ENGINE_SOURCE_FILES} ${RENDER_ENGINE_HEADER_FILES}
-                    ${RENDER_ENGINE_SHADERS_SOURCE_FILES} ${RENDER_ENGINE_SHADERS_HEADER_FILES})
-    target_link_libraries(SdfRender PUBLIC ${PROJECT_NAME} glfw imgui imguizmo glad)
-    target_include_directories(SdfRender PRIVATE src/)
-    add_dependencies(SdfRender copyShaders)
-
-    add_executable(SdfLight src/tools/SdfLight/main.cpp
-                    ${RENDER_ENGINE_SOURCE_FILES} ${RENDER_ENGINE_HEADER_FILES}
-                    ${RENDER_ENGINE_SHADERS_SOURCE_FILES} ${RENDER_ENGINE_SHADERS_HEADER_FILES})
-    target_link_libraries(SdfLight PUBLIC ${PROJECT_NAME} glfw imgui imguizmo glad)
-    target_include_directories(SdfLight PRIVATE src/)
-    add_dependencies(SdfLight copyShaders)
-
     add_executable(SdfExporter src/tools/SdfExporter/main.cpp)
     target_link_libraries(SdfExporter PUBLIC ${PROJECT_NAME})
 
@@ -157,13 +115,6 @@ if(SDFLIB_BUILD_DEBUG_APPS)
 
     add_executable(UniformGridSdfOctreeTest src/tools/UniformGridSdfOctreeTest/main.cpp)
     target_link_libraries(UniformGridSdfOctreeTest PUBLIC ${PROJECT_NAME})
-
-    add_executable(OctreeExactMeanOfTrianglesViewer src/tools/OctreeExactMeanOfTrianglesViewer/main.cpp
-                    ${RENDER_ENGINE_SOURCE_FILES} ${RENDER_ENGINE_HEADER_FILES}
-                    ${RENDER_ENGINE_SHADERS_SOURCE_FILES} ${RENDER_ENGINE_SHADERS_HEADER_FILES})
-    target_link_libraries(OctreeExactMeanOfTrianglesViewer PUBLIC ${PROJECT_NAME} glfw imgui imguizmo glad)
-    target_include_directories(OctreeExactMeanOfTrianglesViewer PRIVATE src/)
-    add_dependencies(OctreeExactMeanOfTrianglesViewer copyShaders)
 
     add_executable(SdfOctreeTest src/tools/SdfOctreeTest/main.cpp)
     target_link_libraries(SdfOctreeTest PUBLIC ${PROJECT_NAME})
