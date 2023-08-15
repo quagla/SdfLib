@@ -114,10 +114,6 @@ if(NOT fcpw_lib_POPULATED)
 	target_include_directories(fcpw INTERFACE ${fcpw_lib_SOURCE_DIR})
 endif()
 
-# stb
-add_library(stb_image INTERFACE)
-target_include_directories(stb_image INTERFACE stb)
-
 # icg
 add_library(icg INTERFACE)
 target_include_directories(icg INTERFACE InteractiveComputerGraphics)
