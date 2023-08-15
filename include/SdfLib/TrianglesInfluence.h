@@ -1,7 +1,6 @@
 #ifndef TRIANGLES_INFLUENCE_H
 #define TRIANGLES_INFLUENCE_H
 
-#include <fcpw/fcpw.h>
 #include "utils/Mesh.h"
 #include "utils/TriangleUtils.h"
 #include "OctreeSdfUtils.h"
@@ -1005,117 +1004,6 @@ struct VHQueries
     {
         SPDLOG_INFO("Mean triangles evaulated per query {}", static_cast<float>(icg->getNumEvaluatedTriangles()) / static_cast<float>(icg->getNumQueries()));
         SPDLOG_INFO("Num queries made {}", icg->getNumQueries());
-    }
-};
-
-template<typename T>
-struct FCPWQueries
-{
-    typedef T InterpolationMethod;
-
-    typedef uint32_t VertexInfo;
-    struct {} NodeInfo;
-
-    const uint32_t CACHE_AXIS_POWER = 5;
-    const uint32_t CACHE_AXIS_MASK = (1 << CACHE_AXIS_POWER) - 1;
-    const uint32_t CACHE_AXIS_SIZE = 1 << CACHE_AXIS_POWER;
-    std::vector<std::pair<glm::uvec3, VertexInfo>> vertexInfoCache;
-    glm::vec3 coordToId;
-    glm::vec3 minPoint;
-
-    std::shared_ptr<fcpw::Scene<3>> scene = nullptr;
-    bool initialized = false;
-
-    void initCaches(BoundingBox box, uint32_t maxDepth)
-    {
-        vertexInfoCache.resize(CACHE_AXIS_SIZE * CACHE_AXIS_SIZE * CACHE_AXIS_SIZE,
-                               std::make_pair(glm::uvec3((1 << maxDepth) + 1), 0));
-        coordToId = glm::vec3(static_cast<float>((1 << maxDepth)) / box.getSize());
-        minPoint = box.min;
-    }
-    
-    template<size_t N>
-    inline void calculateVerticesInfo(const glm::vec3 nodeCenter, const float nodeHalfSize,
-                                      const std::vector<uint32_t>& triangles,
-                                      const std::array<glm::vec3, N>& pointsRelPos,
-                                      const uint32_t pointToInterpolateMask,
-                                      const std::array<float, InterpolationMethod::NUM_COEFFICIENTS>& interpolationCoeff,
-                                      std::array<std::array<float, InterpolationMethod::VALUES_PER_VERTEX>, N>& outPointsValues,
-                                      std::array<VertexInfo, N>& outPointsInfo,
-                                      const Mesh& mesh, const std::vector<TriangleUtils::TriangleData>& trianglesData)
-    {
-        if(!initialized)
-        {
-            scene = std::make_shared<fcpw::Scene<3>>();
-            scene->setObjectTypes({{fcpw::PrimitiveType::Triangle}});
-            const uint32_t numVertices = mesh.getVertices().size();
-            const uint32_t numIndices = mesh.getIndices().size() / 3;
-            scene->setObjectVertexCount(numVertices, 0);
-            scene->setObjectTriangleCount(numIndices, 0);
-
-            // specify the vertex positions
-            for (int i = 0; i < numVertices; i++) {
-                scene->setObjectVertex(*reinterpret_cast<const fcpw::Vector3*>(&mesh.getVertices()[i]), i, 0);
-            }
-
-            // specify the triangle indices
-            for (int i = 0; i < numIndices; i++) {
-                scene->setObjectTriangle(reinterpret_cast<const int*>(&mesh.getIndices()[3*i]), i, 0);
-            }
-
-            scene->build(fcpw::AggregateType::Bvh_Volume, true);
-
-            initialized = true;
-        }
-
-        std::array<glm::vec3, N> inPoints;
-        for(uint32_t i=0; i < N; i++)
-        {
-            inPoints[i] = nodeCenter + pointsRelPos[i] * nodeHalfSize;
-            const glm::uvec3 pointId = glm::uvec3(glm::round((inPoints[i] - minPoint) * coordToId));
-
-            const uint32_t cacheId = ((pointId.z & CACHE_AXIS_MASK) << (2*CACHE_AXIS_POWER)) | 
-                                     ((pointId.y & CACHE_AXIS_MASK) << CACHE_AXIS_POWER) | 
-                                     (pointId.x & CACHE_AXIS_MASK);
-
-            if(vertexInfoCache[cacheId].first == pointId)
-            {
-                outPointsInfo[i] = vertexInfoCache[cacheId].second;
-            }
-            else
-            {
-                fcpw::Interaction<3> interaction;
-                scene->findClosestPoint(*reinterpret_cast<fcpw::Vector3*>(&inPoints[i]), interaction);
-                outPointsInfo[i] = interaction.primitiveIndex;
-
-                vertexInfoCache[cacheId] = std::make_pair(pointId, outPointsInfo[i]);
-            }
-        }
-
-        for(uint32_t i=0; i < N; i++)
-        {
-            if(pointToInterpolateMask & (1 << (N-i-1)))
-            {
-                InterpolationMethod::interpolateVertexValues(interpolationCoeff, 0.5f * pointsRelPos[i] + 0.5f, 2.0f * nodeHalfSize, outPointsValues[i]);
-            }
-            else
-            {
-                InterpolationMethod::calculatePointValues(inPoints[i], outPointsInfo[i], mesh, trianglesData, outPointsValues[i]);
-            }
-        }
-    }
-
-    inline void filterTriangles(const glm::vec3 nodeCenter, const float nodeHalfSize,
-                                const std::vector<uint32_t>& inTriangles, std::vector<uint32_t>& outTriangles,
-                                const std::array<std::array<float, InterpolationMethod::VALUES_PER_VERTEX>, 8>& verticesValues,
-                                const std::array<VertexInfo, 8>& verticesInfo,
-                                const Mesh& mesh, const std::vector<TriangleUtils::TriangleData>& trianglesData)
-    {
-        outTriangles.clear();
-    }
-
-    void printStatistics() 
-    {
     }
 };
 }
