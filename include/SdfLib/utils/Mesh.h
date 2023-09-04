@@ -56,8 +56,8 @@ class Mesh
 {
 public:
     Mesh() {}
-    Mesh(std::string filePath);
 #ifdef ASSIMP_AVAILABLE
+    Mesh(std::string filePath);
     Mesh(const aiMesh* mesh);
 #endif
     Mesh(glm::vec3* vertices, uint32_t numVertices,
