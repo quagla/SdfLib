@@ -4,9 +4,11 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
+#ifdef ASSIMP_AVAILABLE
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>      
 #include <assimp/postprocess.h>
+#endif
 #include "SdfLib/utils/UsefullSerializations.h"
 
 namespace sdflib
@@ -55,7 +57,9 @@ class Mesh
 public:
     Mesh() {}
     Mesh(std::string filePath);
+#ifdef ASSIMP_AVAILABLE
     Mesh(const aiMesh* mesh);
+#endif
     Mesh(glm::vec3* vertices, uint32_t numVertices,
          uint32_t* indices, uint32_t numIndices);
 
@@ -74,7 +78,9 @@ public:
     void computeNormals();
     void applyTransform(glm::mat4 trans);
 private:
+#ifdef ASSIMP_AVAILABLE
     void initMesh(const aiMesh* mesh);
+#endif
 
     std::vector<glm::vec3> mVertices;
     std::vector<uint32_t> mIndices;
