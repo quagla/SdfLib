@@ -886,7 +886,7 @@ class ICG
 public:
     ICG(const Mesh& mesh)
     : mesh_distance(toDoubleVector(mesh.getVertices()),
-                    *reinterpret_cast<const std::vector<std::array<int, 3>>*>(&mesh.getIndices()))
+                    toIntVector(mesh.getIndices()))
     {}
 
     inline float getDistance(glm::vec3 samplePoint)
@@ -917,6 +917,17 @@ private:
         for(uint32_t i=0; i < vec.size(); i++)
         {
             res[i] = { static_cast<double>(vec[i].x), static_cast<double>(vec[i].y), static_cast<double>(vec[i].z) };
+        }
+
+        return res;
+    }
+
+    std::vector<std::array<int, 3>> toIntVector(const std::vector<uint32_t>& vec)
+    {
+        std::vector<std::array<int, 3>> res(vec.size());
+        for(uint32_t i=0; i < vec.size()/3; i++)
+        {
+            res[i] = { static_cast<int>(vec[3*i]), static_cast<int>(vec[3*i+1]), static_cast<int>(vec[3*i+2]) };
         }
 
         return res;
